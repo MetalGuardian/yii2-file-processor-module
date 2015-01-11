@@ -6,12 +6,12 @@
 
 namespace metalguardian\fileProcessor\behaviors;
 
-use yii\helpers\VarDumper;
-
 /**
  * Class UploadBehavior
  *
  * @package metalguardian\fileProcessor\behaviors
+ *
+ * @property \yii\base\Model $owner
  */
 class UploadBehavior extends \yii\base\Behavior
 {
@@ -27,14 +27,14 @@ class UploadBehavior extends \yii\base\Behavior
 	 * @see FileValidator
 	 * @see ImageValidator
 	 */
-	public $validator = [
-		'extensions' => ['xml', 'jpg'],
-	];
+	public $validator = [];
 
 	/**
 	 * @var bool use [[ImageValidator]] instead of [[FileValidator]]
 	 */
 	public $image = false;
+
+	public $required = true;
 
 	/**
 	 * @inheritdoc
@@ -42,28 +42,8 @@ class UploadBehavior extends \yii\base\Behavior
 	public function events()
 	{
 		return [
-			\yii\base\Model::EVENT_BEFORE_VALIDATE => 'beforeValidate',
-			\yii\base\Model::EVENT_AFTER_VALIDATE => 'afterValidate',
+			\yii\base\Model::EVENT_AFTER_VALIDATE => 'evaluateAttributes',
 		];
-	}
-
-	public function attach($owner)
-	{
-		parent::attach($owner);
-
-		$this->addValidator();
-	}
-
-	public function detach()
-	{
-		parent::detach();
-
-		$this->removeValidator();
-	}
-
-	public function beforeValidate($event)
-	{
-		$this->owner->{$this->attribute} = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
 	}
 
 	/**
@@ -71,7 +51,7 @@ class UploadBehavior extends \yii\base\Behavior
 	 *
 	 * @param \yii\base\Event $event
 	 */
-	public function afterValidate($event)
+	public function evaluateAttributes($event)
 	{
 		$value = $this->getValue($event);
 		$this->owner->{$this->attribute} = $value;
@@ -88,29 +68,41 @@ class UploadBehavior extends \yii\base\Behavior
 	 */
 	protected function getValue($event)
 	{
+		$file = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
+		if ($this->validateFile($file)) {
+
+		}
 		return null;
 	}
 
-	protected function addValidator()
+	/**
+	 * Checks if given slug value is unique.
+	 *
+	 * @param \yii\web\UploadedFile $file slug value
+	 *
+	 * @return boolean whether slug is unique.
+	 */
+	private function validateFile(\yii\web\UploadedFile $file = null)
 	{
+		$this->owner->{$this->attribute} = $file;
+
 		/* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
-		/* @var $model \yii\base\Model */
 		$validator = \Yii::createObject(
 			array_merge(
 				[
 					'class' => $this->image ? \yii\validators\ImageValidator::className()
 						: \yii\validators\FileValidator::className(),
-					'attributes' => $this->attribute,
 				],
 				$this->validator
 			)
 		);
 
-		$this->owner->validators[] = $validator;
-	}
+		$validator->validateAttribute($this->owner, $this->attribute);
 
-	protected function removeValidator()
-	{
-		// TODO: implement remove file validator
+		if ($this->owner->hasErrors($this->attribute)) {
+			return false;
+		}
+
+		return true;
 	}
 }
