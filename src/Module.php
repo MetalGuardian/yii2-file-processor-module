@@ -11,7 +11,7 @@ class Module extends \yii\base\Module
      *
      * @var string
      */
-    protected static $tableName = '{{%fpm_file}}';
+    public $tableName = '{{%fpm_file}}';
 
     /**
      * Default table name for table for related files
@@ -25,7 +25,7 @@ class Module extends \yii\base\Module
      *
      * @var string|array host for the images.
      */
-    public static $host = '@web/';
+    public $host = '@web/';
 
     /**
      * Do not change this param when you already reach your files fer dir limit
@@ -34,19 +34,19 @@ class Module extends \yii\base\Module
      *
      * @var integer max images count per dir.
      */
-    public static $filesPerDir = 5000;
+    public $filesPerDir = 5000;
 
     /**
      * Base path
      *
      * @var bool|string
      */
-    public static $baseUploadDirectory = '@webroot/';
+    public $baseUploadDirectory = '@webroot/';
 
     /**
      * @var string original files base dir
      */
-    public static $originalDirectory = 'uploads';
+    public $originalDirectory = 'uploads';
 
     /**
      * @var string cached images base dir
@@ -93,6 +93,7 @@ class Module extends \yii\base\Module
             'basePath' => '@metalguardian/fileProcessor/messages',
             'fileMap' => [
                 'modules/fileProcessor/model' => 'model.php',
+                'modules/fileProcessor/exception' => 'exception.php',
             ],
         ];
     }
@@ -100,47 +101,5 @@ class Module extends \yii\base\Module
     public static function t($category, $message, $params = [], $language = null)
     {
         return \Yii::t('modules/fileProcessor/' . $category, $message, $params, $language);
-    }
-
-    /**
-     * Get host for the image with $id
-     *
-     * @param null $id image id
-     *
-     * @return string
-     */
-    public function getHost($id = null)
-    {
-        $host = '/';
-        if (is_array($this->host)) {
-            $count = count($this->host);
-            $host = $this->host[$id % $count];
-        } else {
-            $host = $this->host;
-        }
-        return $host;
-    }
-
-    /**
-     * @return string
-     */
-    public static function getTableName()
-    {
-        return self::$tableName;
-    }
-
-    public static function getBaseUploadDirectory()
-    {
-        return \Yii::getAlias(self::$baseUploadDirectory);
-    }
-
-    public static function getUploadDirectory()
-    {
-        return self::getBaseUploadDirectory() . self::$originalDirectory;
-    }
-
-    public static function getFilesPerDirectory()
-    {
-        return self::$filesPerDir;
     }
 }

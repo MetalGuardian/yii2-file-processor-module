@@ -20,7 +20,7 @@ class File extends \yii\db\ActiveRecord
      */
     public static function tableName()
     {
-        return Module::getTableName();
+        return \metalguardian\fileProcessor\helpers\FPM::getTableName();
     }
 
     /**

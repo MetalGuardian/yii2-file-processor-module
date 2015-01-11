@@ -15,7 +15,7 @@ namespace metalguardian\fileProcessor\behaviors;
  */
 class UploadBehavior extends \yii\base\Behavior
 {
-
+	const EVENT_AFTER_FILE_SAVE = 'afterFileSave';
 	const VALIDATOR_OFFSET = 100;
 
 	/**
@@ -29,15 +29,14 @@ class UploadBehavior extends \yii\base\Behavior
 	 * @see FileValidator
 	 * @see ImageValidator
 	 */
-	public $validator = [
-		//'extensions' => ['xml', 'jpg'],
-		//'skipOnEmpty' => false,
-	];
+	public $validator = [];
 
 	/**
 	 * @var bool use [[ImageValidator]] instead of [[FileValidator]]
 	 */
 	public $image = false;
+
+	public $required = true;
 
 	protected $validatorIndex;
 
@@ -52,6 +51,9 @@ class UploadBehavior extends \yii\base\Behavior
 		];
 	}
 
+	/**
+	 * @inheritdoc
+	 */
 	public function attach($owner)
 	{
 		parent::attach($owner);
@@ -59,6 +61,9 @@ class UploadBehavior extends \yii\base\Behavior
 		$this->addValidator();
 	}
 
+	/**
+	 * @inheritdoc
+	 */
 	public function detach()
 	{
 		parent::detach();
@@ -66,8 +71,13 @@ class UploadBehavior extends \yii\base\Behavior
 		$this->removeValidator();
 	}
 
+	/**
+	 * @param \yii\base\Event $event
+	 */
 	public function beforeValidate($event)
 	{
+		\yii\helpers\VarDumper::dump($this->owner->{$this->attribute});
+		exit();
 		$this->owner->{$this->attribute} = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
 	}
 
@@ -97,7 +107,9 @@ class UploadBehavior extends \yii\base\Behavior
 	{
 		$file = $this->owner->{$this->attribute};
 		if (!$this->getValidator()->isEmpty($file)) {
-			$this->deleteFile();
+
+			$oldFileId = null;
+			\metalguardian\fileProcessor\helpers\FPM::deleteFile($oldFileId);
 
 			$fileId = $this->saveUploadedFile($file);
 
@@ -107,15 +119,21 @@ class UploadBehavior extends \yii\base\Behavior
 		return null;
 	}
 
+	/**
+	 * @throws \yii\base\InvalidConfigException
+	 */
 	protected function addValidator()
 	{
+		unset($this->validator['maxFiles']);
+
 		/* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
 		$validator = \Yii::createObject(
 			array_merge(
 				[
 					'class' => $this->image ? \yii\validators\ImageValidator::className()
 						: \yii\validators\FileValidator::className(),
-					'attributes' => $this->attribute,
+					'attributes' => [$this->attribute],
+					'skipOnEmpty' => $this->required ? false : true,
 				],
 				$this->validator
 			)
@@ -124,13 +142,16 @@ class UploadBehavior extends \yii\base\Behavior
 		$this->owner->getValidators()->offsetSet($this->getValidatorIndex(), $validator);
 	}
 
+	/**
+	 *
+	 */
 	protected function removeValidator()
 	{
 		$this->owner->getValidators()->offsetUnset($this->getValidatorIndex());
 	}
 
 	/**
-	 * @return mixed
+	 * @return integer
 	 */
 	public function getValidatorIndex()
 	{
@@ -153,20 +174,18 @@ class UploadBehavior extends \yii\base\Behavior
 		return $this->owner->getValidators()->offsetGet($this->getValidatorIndex());
 	}
 
-	protected function deleteFile()
-	{
-		if ($this->owner->{$this->attribute}) {
-			// TODO: delete file
-		}
-	}
-
+	/**
+	 * @param \yii\web\UploadedFile $file
+	 *
+	 * @return int
+	 */
 	public function saveUploadedFile(\yii\web\UploadedFile $file)
 	{
 		$id = $this->saveData($file);
 
-		$directory = \metalguardian\fileProcessor\Module::getUploadDirectory()
+		$directory = \metalguardian\fileProcessor\helpers\FPM::getUploadDirectory()
 			. DIRECTORY_SEPARATOR
-			. floor($id / \metalguardian\fileProcessor\Module::getFilesPerDirectory());
+			. floor($id / \metalguardian\fileProcessor\helpers\FPM::getFilesPerDirectory());
 
 		\yii\helpers\FileHelper::createDirectory($directory, 0777, true);
 
@@ -177,9 +196,16 @@ class UploadBehavior extends \yii\base\Behavior
 
 		$file->saveAs($fileName);
 
+		$this->owner->trigger(static::EVENT_AFTER_FILE_SAVE);
+
 		return $id;
 	}
 
+	/**
+	 * @param \yii\web\UploadedFile $file
+	 *
+	 * @return int
+	 */
 	public function saveData(\yii\web\UploadedFile $file)
 	{
 		$ext = $file->getExtension();
