@@ -16,6 +16,8 @@ namespace metalguardian\fileProcessor\behaviors;
 class UploadBehavior extends \yii\base\Behavior
 {
 
+	const VALIDATOR_OFFSET = 100;
+
 	/**
 	 * @var string the attribute that will receive the fileId value
 	 */
@@ -27,14 +29,17 @@ class UploadBehavior extends \yii\base\Behavior
 	 * @see FileValidator
 	 * @see ImageValidator
 	 */
-	public $validator = [];
+	public $validator = [
+		//'extensions' => ['xml', 'jpg'],
+		//'skipOnEmpty' => false,
+	];
 
 	/**
 	 * @var bool use [[ImageValidator]] instead of [[FileValidator]]
 	 */
 	public $image = false;
 
-	public $required = true;
+	protected $validatorIndex;
 
 	/**
 	 * @inheritdoc
@@ -42,8 +47,28 @@ class UploadBehavior extends \yii\base\Behavior
 	public function events()
 	{
 		return [
-			\yii\base\Model::EVENT_AFTER_VALIDATE => 'evaluateAttributes',
+			\yii\base\Model::EVENT_BEFORE_VALIDATE => 'beforeValidate',
+			\yii\base\Model::EVENT_AFTER_VALIDATE => 'afterValidate',
 		];
+	}
+
+	public function attach($owner)
+	{
+		parent::attach($owner);
+
+		$this->addValidator();
+	}
+
+	public function detach()
+	{
+		parent::detach();
+
+		$this->removeValidator();
+	}
+
+	public function beforeValidate($event)
+	{
+		$this->owner->{$this->attribute} = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
 	}
 
 	/**
@@ -51,10 +76,12 @@ class UploadBehavior extends \yii\base\Behavior
 	 *
 	 * @param \yii\base\Event $event
 	 */
-	public function evaluateAttributes($event)
+	public function afterValidate($event)
 	{
-		$value = $this->getValue($event);
-		$this->owner->{$this->attribute} = $value;
+		if (!$this->owner->hasErrors()) {
+			$value = $this->getValue($event);
+			$this->owner->{$this->attribute} = $value;
+		}
 	}
 
 	/**
@@ -68,41 +95,101 @@ class UploadBehavior extends \yii\base\Behavior
 	 */
 	protected function getValue($event)
 	{
-		$file = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
-		if ($this->validateFile($file)) {
+		$file = $this->owner->{$this->attribute};
+		if (!$this->getValidator()->isEmpty($file)) {
+			$this->deleteFile();
 
+			$fileId = $this->saveUploadedFile($file);
+
+			return $fileId;
 		}
+
 		return null;
 	}
 
-	/**
-	 * Checks if given slug value is unique.
-	 *
-	 * @param \yii\web\UploadedFile $file slug value
-	 *
-	 * @return boolean whether slug is unique.
-	 */
-	private function validateFile(\yii\web\UploadedFile $file = null)
+	protected function addValidator()
 	{
-		$this->owner->{$this->attribute} = $file;
-
 		/* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
 		$validator = \Yii::createObject(
 			array_merge(
 				[
 					'class' => $this->image ? \yii\validators\ImageValidator::className()
 						: \yii\validators\FileValidator::className(),
+					'attributes' => $this->attribute,
 				],
 				$this->validator
 			)
 		);
 
-		$validator->validateAttribute($this->owner, $this->attribute);
+		$this->owner->getValidators()->offsetSet($this->getValidatorIndex(), $validator);
+	}
 
-		if ($this->owner->hasErrors($this->attribute)) {
-			return false;
+	protected function removeValidator()
+	{
+		$this->owner->getValidators()->offsetUnset($this->getValidatorIndex());
+	}
+
+	/**
+	 * @return mixed
+	 */
+	public function getValidatorIndex()
+	{
+		$offset = self::VALIDATOR_OFFSET;
+		while (!$this->validatorIndex) {
+			if (!$this->owner->getValidators()->offsetExists($offset)) {
+				$this->validatorIndex = $offset;
+			}
+			$offset++;
 		}
 
-		return true;
+		return $this->validatorIndex;
+	}
+
+	/**
+	 * @return \yii\validators\FileValidator|\yii\validators\ImageValidator
+	 */
+	public function getValidator()
+	{
+		return $this->owner->getValidators()->offsetGet($this->getValidatorIndex());
+	}
+
+	protected function deleteFile()
+	{
+		if ($this->owner->{$this->attribute}) {
+			// TODO: delete file
+		}
+	}
+
+	public function saveUploadedFile(\yii\web\UploadedFile $file)
+	{
+		$id = $this->saveData($file);
+
+		$directory = \metalguardian\fileProcessor\Module::getUploadDirectory()
+			. DIRECTORY_SEPARATOR
+			. floor($id / \metalguardian\fileProcessor\Module::getFilesPerDirectory());
+
+		\yii\helpers\FileHelper::createDirectory($directory, 0777, true);
+
+		$realName = $file->getBaseName();
+		$ext = $file->getExtension();
+		$ext = $ext ? '.' . $ext : null;
+		$fileName = $directory . DIRECTORY_SEPARATOR . $id . '-' . $realName . $ext;
+
+		$file->saveAs($fileName);
+
+		return $id;
+	}
+
+	public function saveData(\yii\web\UploadedFile $file)
+	{
+		$ext = $file->getExtension();
+		$baseName = $file->getBaseName();
+
+		$model = new \metalguardian\fileProcessor\models\File();
+		$model->extension = $ext;
+		$model->real_name = $baseName;
+		$model->save(false);
+
+		return $model->id;
 	}
 }
