@@ -5,13 +5,12 @@ namespace metalguardian\fileProcessor\models;
 use metalguardian\fileProcessor\Module;
 
 /**
- * This is the model class for table "fpm_file".
+ * This is the model class for table "{{%fpm_file}}".
  *
  * @property integer $id
  * @property string $extension
- * @property string $real_name
+ * @property string $base_name
  * @property integer $created_at
- * @property integer $updated_at
  */
 class File extends \yii\db\ActiveRecord
 {
@@ -31,6 +30,9 @@ class File extends \yii\db\ActiveRecord
         return [
             [
                 'class' => \yii\behaviors\TimestampBehavior::className(),
+                'attributes' => [
+                    \yii\db\BaseActiveRecord::EVENT_BEFORE_INSERT => ['created_at'],
+                ]
             ],
         ];
     }
@@ -43,7 +45,7 @@ class File extends \yii\db\ActiveRecord
         return [
             [['extension'], 'required'],
             [['extension'], 'string', 'max' => 10],
-            [['real_name'], 'string', 'max' => 250]
+            [['base_name'], 'string', 'max' => 250]
         ];
     }
 
@@ -55,7 +57,8 @@ class File extends \yii\db\ActiveRecord
         return [
             'id' => Module::t('model', 'ID'),
             'extension' => Module::t('model', 'Extension'),
-            'real_name' => Module::t('model', 'Base name'),
+            'base_name' => Module::t('model', 'Base name'),
+            'created_at' => Module::t('app', 'Created At'),
         ];
     }
 }

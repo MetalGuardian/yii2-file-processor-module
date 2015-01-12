@@ -15,246 +15,198 @@ namespace metalguardian\fileProcessor\behaviors;
  */
 class UploadBehavior extends \yii\base\Behavior
 {
-	const EVENT_AFTER_FILE_SAVE = 'afterFileSave';
-	const VALIDATOR_OFFSET = 100;
+    const VALIDATOR_OFFSET = 100;
 
-	/**
-	 * @var string the attribute that will receive the fileId value
-	 */
-	public $attribute = 'file_id';
+    /**
+     * @var string the attribute that will receive the fileId value
+     */
+    public $attribute = 'file_id';
 
-	/**
-	 * @var array configuration for file validator. Parameter 'class' may be omitted - by default
-	 * [[FileValidator]] will be used (or [[ImageValidator]] if image parameter is true).
-	 * @see FileValidator
-	 * @see ImageValidator
-	 */
-	public $validator = [
-		'extensions' => ['xml']
-	];
+    /**
+     * @var array configuration for file validator. Parameter 'class' may be omitted - by default
+     * [[FileValidator]] will be used (or [[ImageValidator]] if image parameter is true).
+     * @see FileValidator
+     * @see ImageValidator
+     */
+    public $validator = [
+        'extensions' => ['xml']
+    ];
 
-	/**
-	 * @var bool use [[ImageValidator]] instead of [[FileValidator]]
-	 */
-	public $image = false;
+    /**
+     * @var bool use [[ImageValidator]] instead of [[FileValidator]]
+     */
+    public $image = false;
 
-	public $required = true;
+    public $required = true;
 
-	protected $validatorIndex;
+    protected $validatorIndex;
 
-	/**
-	 * @inheritdoc
-	 */
-	public function events()
-	{
-		return [
-			\yii\base\Model::EVENT_BEFORE_VALIDATE => 'beforeValidate',
-			\yii\base\Model::EVENT_AFTER_VALIDATE => 'afterValidate',
-		];
-	}
+    /**
+     * @inheritdoc
+     */
+    public function events()
+    {
+        return [
+            \yii\base\Model::EVENT_BEFORE_VALIDATE => 'beforeValidate',
+            \yii\base\Model::EVENT_AFTER_VALIDATE => 'afterValidate',
+        ];
+    }
 
-	/**
-	 * @inheritdoc
-	 */
-	public function attach($owner)
-	{
-		parent::attach($owner);
+    /**
+     * @inheritdoc
+     */
+    public function attach($owner)
+    {
+        parent::attach($owner);
+        //$this->addValidator();
+    }
 
-		//$this->addValidator();
-	}
+    /**
+     * @inheritdoc
+     */
+    public function detach()
+    {
+        parent::detach();
+        //$this->removeValidator();
+    }
 
-	/**
-	 * @inheritdoc
-	 */
-	public function detach()
-	{
-		parent::detach();
+    /**
+     * Evaluates the attribute value and assigns it to the current attributes.
+     *
+     * @param \yii\base\Event $event
+     */
+    public function beforeValidate($event)
+    {
+        //$this->removeValidator();
+    }
 
-		$this->removeValidator();
-	}
+    /**
+     * Validate file, and delete old file
+     *
+     * @param \yii\base\Event $event
+     *
+     * @return bool
+     */
+    public function afterValidate($event)
+    {
+        $file = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
 
-	/**
-	 * Evaluates the attribute value and assigns it to the current attributes.
-	 *
-	 * @param \yii\base\Event $event
-	 */
-	public function beforeValidate($event)
-	{
-		$this->removeValidator();
-	}
+        if (!$file && !$this->required) {
+            return false;
+        }
 
-	/**
-	 * Validate file, and delete old file
-	 *
-	 * @param \yii\base\Event $event
-	 *
-	 * @return bool
-	 */
-	public function afterValidate($event)
-	{
-		$file = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
+        $oldFileId = $this->owner->{$this->attribute};
+        if ($this->validateFile($file)) {
+            $this->owner->{$this->attribute} = $this->getValue($file);
 
-		if (!$file && !$this->required) {
-			return false;
-		}
+            \metalguardian\fileProcessor\helpers\FPM::deleteFile($oldFileId);
 
-		$oldFileId = $this->owner->{$this->attribute};
-		if ($this->validateFile($file)) {
-			$this->owner->{$this->attribute} = $this->getValue($file);
+            return true;
+        }
 
-			\metalguardian\fileProcessor\helpers\FPM::deleteFile($oldFileId);
+        return false;
+    }
 
-			return true;
-		}
+    /**
+     *
+     * @param $file
+     *
+     * @return int
+     */
+    protected function getValue($file)
+    {
+        $fileId = \metalguardian\fileProcessor\helpers\FPM::transfer()->saveUploadedFile($file);
 
-		return false;
-	}
+        return $fileId;
+    }
 
-	/**
-	 *
-	 * @param $file
-	 *
-	 * @return int
-	 */
-	protected function getValue($file)
-	{
-		$fileId = $this->saveUploadedFile($file);
+    /**
+     * Checks if given slug value is unique.
+     *
+     * @param \yii\web\UploadedFile $file slug value
+     *
+     * @return boolean whether slug is unique.
+     */
+    protected function validateFile(\yii\web\UploadedFile $file = null)
+    {
+        unset($this->validator['maxFiles']);
+        /* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
+        $validator = \Yii::createObject(
+            array_merge(
+                [
+                    'class' => $this->image ? \yii\validators\ImageValidator::className()
+                        : \yii\validators\FileValidator::className(),
+                    'attributes' => [$this->attribute],
+                    'skipOnEmpty' => $this->required ? false : true,
+                ],
+                $this->validator
+            )
+        );
 
-		return $fileId;
-	}
+        $model = clone $this->owner;
+        $model->clearErrors();
+        $model->{$this->attribute} = $file;
+        $validator->validateAttribute($model, $this->attribute);
+        if ($model->hasErrors()) {
+            $this->owner->addErrors($model->getErrors());
+            return false;
+        }
 
-	/**
-	 * Checks if given slug value is unique.
-	 *
-	 * @param \yii\web\UploadedFile $file slug value
-	 *
-	 * @return boolean whether slug is unique.
-	 */
-	protected function validateFile(\yii\web\UploadedFile $file = null)
-	{
-		unset($this->validator['maxFiles']);
-		/* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
-		$validator = \Yii::createObject(
-			array_merge(
-				[
-					'class' => $this->image ? \yii\validators\ImageValidator::className()
-						: \yii\validators\FileValidator::className(),
-					'attributes' => [$this->attribute],
-					'skipOnEmpty' => $this->required ? false : true,
-				],
-				$this->validator
-			)
-		);
+        return true;
+    }
 
-		$model = clone $this->owner;
-		$model->clearErrors();
-		$model->{$this->attribute} = $file;
-		$validator->validateAttribute($model, $this->attribute);
-		if ($model->hasErrors()) {
-			$this->owner->addErrors($model->getErrors());
-			return false;
-		}
+    /**
+     * @throws \yii\base\InvalidConfigException
+     */
+    protected function addValidator()
+    {
+        unset($this->validator['maxFiles']);
 
-		return true;
-	}
+        /* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
+        $validator = \Yii::createObject(
+            array_merge(
+                [
+                    'class' => $this->image ? \yii\validators\ImageValidator::className()
+                        : \yii\validators\FileValidator::className(),
+                    'attributes' => [$this->attribute],
+                    'skipOnEmpty' => $this->required ? false : true,
+                ],
+                $this->validator
+            )
+        );
 
-	/**
-	 * @param \yii\web\UploadedFile $file
-	 *
-	 * @return int
-	 */
-	public function saveUploadedFile(\yii\web\UploadedFile $file)
-	{
-		$id = $this->saveData($file);
+        $this->owner->getValidators()->offsetSet($this->getValidatorIndex(), $validator);
+    }
 
-		$directory = \metalguardian\fileProcessor\helpers\FPM::getUploadDirectory()
-			. DIRECTORY_SEPARATOR
-			. floor($id / \metalguardian\fileProcessor\helpers\FPM::getFilesPerDirectory());
+    protected function removeValidator()
+    {
+        if ($this->owner->getValidators()->offsetExists($this->getValidatorIndex())) {
+            // TODO: add checking if it is a current validator
+            $this->owner->getValidators()->offsetUnset($this->getValidatorIndex());
+        }
+    }
 
-		\yii\helpers\FileHelper::createDirectory($directory, 0777, true);
+    /**
+     * @return integer
+     */
+    public function getValidatorIndex()
+    {
+        $offset = static::VALIDATOR_OFFSET;
+        while (!$this->validatorIndex) {
+            if (!$this->owner->getValidators()->offsetExists($offset)) {
+                $this->validatorIndex = $offset;
+            }
+            $offset++;
+        }
 
-		$realName = $file->getBaseName();
-		$ext = $file->getExtension();
-		$ext = $ext ? '.' . $ext : null;
-		$fileName = $directory . DIRECTORY_SEPARATOR . $id . '-' . $realName . $ext;
+        return $this->validatorIndex;
+    }
 
-		$file->saveAs($fileName);
-
-		$this->owner->trigger(static::EVENT_AFTER_FILE_SAVE);
-
-		return $id;
-	}
-
-	/**
-	 * @param \yii\web\UploadedFile $file
-	 *
-	 * @return int
-	 */
-	public function saveData(\yii\web\UploadedFile $file)
-	{
-		$ext = $file->getExtension();
-		$baseName = $file->getBaseName();
-
-		$model = new \metalguardian\fileProcessor\models\File();
-		$model->extension = $ext;
-		$model->real_name = $baseName;
-		$model->save(false);
-
-		return $model->id;
-	}
-
-	/**
-	 * @throws \yii\base\InvalidConfigException
-	 */
-	protected function addValidator()
-	{
-		unset($this->validator['maxFiles']);
-
-		/* @var $validator \yii\validators\FileValidator|\yii\validators\ImageValidator */
-		$validator = \Yii::createObject(
-			array_merge(
-				[
-					'class' => $this->image ? \yii\validators\ImageValidator::className()
-						: \yii\validators\FileValidator::className(),
-					'attributes' => [$this->attribute],
-					'skipOnEmpty' => $this->required ? false : true,
-				],
-				$this->validator
-			)
-		);
-
-		$this->owner->getValidators()->offsetSet($this->getValidatorIndex(), $validator);
-	}
-
-	protected function removeValidator()
-	{
-		if ($this->owner->getValidators()->offsetExists($this->getValidatorIndex())) {
-			// TODO: add checking if it is a current validator
-			$this->owner->getValidators()->offsetUnset($this->getValidatorIndex());
-		}
-	}
-
-	/**
-	 * @return integer
-	 */
-	public function getValidatorIndex()
-	{
-		$offset = self::VALIDATOR_OFFSET;
-		while (!$this->validatorIndex) {
-			if (!$this->owner->getValidators()->offsetExists($offset)) {
-				$this->validatorIndex = $offset;
-			}
-			$offset++;
-		}
-
-		return $this->validatorIndex;
-	}
-
-	/**
-	 * @return \yii\validators\FileValidator|\yii\validators\ImageValidator
-	 */
-	public function getValidator()
-	{
-		return $this->owner->getValidators()->offsetGet($this->getValidatorIndex());
-	}
+    /**
+     * @return \yii\validators\FileValidator|\yii\validators\ImageValidator
+     */
+    public function getValidator()
+    {
+        return $this->owner->getValidators()->offsetGet($this->getValidatorIndex());
+    }
 }

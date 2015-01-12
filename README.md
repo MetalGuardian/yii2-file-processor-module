@@ -28,4 +28,6 @@ Usage
 Once the extension is installed, simply use it in your code by  :
 
 ```php
-<?= \metalguardian\src\AutoloadExample::widget(); ?>```
+<?= \metalguardian\src\AutoloadExample::widget(); ?>
+./yii migrate --migrationPath=@backend/runtime/tmp-extensions/yii2-file-processor-module/src/migrations
+```

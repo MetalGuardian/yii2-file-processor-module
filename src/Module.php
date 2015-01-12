@@ -2,8 +2,14 @@
 
 namespace metalguardian\fileProcessor;
 
+/**
+ * Class Module
+ *
+ * @package metalguardian\fileProcessor
+ */
 class Module extends \yii\base\Module
 {
+
     public $controllerNamespace = 'metalguardian\fileProcessor\controllers';
 
     /**
@@ -53,6 +59,14 @@ class Module extends \yii\base\Module
      */
     public $thumbnailDirectory = 'uploads/thumb';
 
+    public $originalDirectoryNameTemplate = '{id}';
+
+    public $originalFileNameTemplate = '{id}-{baseName}.{extension}';
+
+    public $thumbnailDirectoryNameTemplate = '{id}/{module}_{size}';
+
+    public $thumbnailFileNameTemplate = '{id}-{baseName}.{extension}';
+
     /**
      * @var array all project images definition.
      *
@@ -76,7 +90,7 @@ class Module extends \yii\base\Module
      *        )
      * )
      */
-    public $imageSections = array();
+    public $imageSections = [];
 
     public function init()
     {
@@ -98,6 +112,14 @@ class Module extends \yii\base\Module
         ];
     }
 
+    /**
+     * @param $category
+     * @param $message
+     * @param array $params
+     * @param null $language
+     *
+     * @return string
+     */
     public static function t($category, $message, $params = [], $language = null)
     {
         return \Yii::t('modules/fileProcessor/' . $category, $message, $params, $language);

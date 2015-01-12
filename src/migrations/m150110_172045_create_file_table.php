@@ -3,6 +3,9 @@
 use yii\db\Schema;
 use yii\db\Migration;
 
+/**
+ * Class m150110_172045_create_file_table
+ */
 class m150110_172045_create_file_table extends Migration
 {
     public function up()
@@ -13,15 +16,12 @@ class m150110_172045_create_file_table extends Migration
         }
 
         $this->createTable(
-            \metalguardian\fileProcessor\Module::getTableName(),
+            \metalguardian\fileProcessor\helpers\FPM::getTableName(),
             [
                 'id' => Schema::TYPE_PK,
-
-                'extension' => Schema::TYPE_STRING . '(10) NOT NULL COMMENT "extension of the file"',
-                'real_name' => Schema::TYPE_STRING . '(250) NULL DEFAULT NULL COMMENT "real name of the file"',
-
+                'extension' => Schema::TYPE_STRING . '(10) NOT NULL COMMENT "File extension"',
+                'base_name' => Schema::TYPE_STRING . '(250) NULL DEFAULT NULL COMMENT "File base name"',
                 'created_at' => Schema::TYPE_INTEGER . ' NOT NULL',
-                'updated_at' => Schema::TYPE_INTEGER . ' NOT NULL',
             ],
             $tableOptions
         );
@@ -29,6 +29,6 @@ class m150110_172045_create_file_table extends Migration
 
     public function down()
     {
-        $this->dropTable(\metalguardian\fileProcessor\Module::getTableName());
+        $this->dropTable(\metalguardian\fileProcessor\helpers\FPM::getTableName());
     }
 }
