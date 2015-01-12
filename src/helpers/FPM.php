@@ -181,8 +181,9 @@ class FPM
         return
             static::getHost($id)
             . static::m()->thumbnailDirectory
-            . DIRECTORY_SEPARATOR
-            . static::getThumbnailDirectoryName($id, $module, $size);
+            . '/'
+            . static::getThumbnailDirectoryName($id, $module, $size)
+            . '/';
     }
 
     /**
