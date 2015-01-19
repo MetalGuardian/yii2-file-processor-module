@@ -7,7 +7,7 @@ namespace metalguardian\fileProcessor;
  *
  * @package metalguardian\fileProcessor
  */
-class Module extends \yii\base\Module
+class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 {
 
     public $controllerNamespace = 'metalguardian\fileProcessor\controllers';
@@ -123,5 +123,16 @@ class Module extends \yii\base\Module
     public static function t($category, $message, $params = [], $language = null)
     {
         return \Yii::t('modules/fileProcessor/' . $category, $message, $params, $language);
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function bootstrap($app)
+    {
+        $app->getUrlManager()->addRules([
+            //'GET ' . $this->thumbnailDirectory . '/<sub:\d+>/<module:\w+>_<size:\w+>/<id:\d+>-<fileName><extension:\.(png|gif|jpg|jpeg|PNG|GIF|JPG|JPEG)>' => $this->id . '/image/process',
+            //'GET ' . $this->thumbnailDirectory . '/<sub:\d+>/<module:\w+>_<size:\w+>/<id:\d+>-<fileName><extension:\w*>' => $this->id . '/file/process',
+        ], false);
     }
 }
