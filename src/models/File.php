@@ -58,7 +58,7 @@ class File extends \yii\db\ActiveRecord
             'id' => Module::t('model', 'ID'),
             'extension' => Module::t('model', 'Extension'),
             'base_name' => Module::t('model', 'Base name'),
-            'created_at' => Module::t('app', 'Created At'),
+            'created_at' => Module::t('model', 'Created At'),
         ];
     }
 }
