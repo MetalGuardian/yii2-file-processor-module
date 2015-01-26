@@ -29,7 +29,7 @@ class UploadBehavior extends \yii\base\Behavior
      * @see ImageValidator
      */
     public $validator = [
-        'extensions' => ['xml']
+        'extensions' => []
     ];
 
     /**

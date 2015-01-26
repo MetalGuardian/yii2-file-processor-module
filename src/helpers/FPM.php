@@ -188,6 +188,22 @@ class FPM
 
     /**
      * @param $id
+     *
+     * @return string
+     * @throws \yii\base\InvalidConfigException
+     */
+    public static function getOriginalDirectoryUrl($id)
+    {
+        return
+            static::getHost($id)
+            . static::m()->originalDirectory
+            . '/'
+            . static::getOriginalDirectoryName($id)
+            . '/';
+    }
+
+    /**
+     * @param $id
      * @param $baseName
      * @param $extension
      *
@@ -291,6 +307,25 @@ class FPM
 
         $model = FPM::transfer()->getData($id);
         $src = static::getThumbnailDirectoryUrl($id, $module, $size)
+            . rawurlencode(static::getThumbnailFileName($id, $model->base_name, $model->extension));
+
+        return $src;
+    }
+
+    /**
+     * @param $id
+     *
+     * @return null|string
+     * @throws \Exception
+     */
+    public static function originalSrc($id)
+    {
+        if (!(int)$id) {
+            return null;
+        }
+
+        $model = FPM::transfer()->getData($id);
+        $src = static::getOriginalDirectoryUrl($id)
             . rawurlencode(static::getThumbnailFileName($id, $model->base_name, $model->extension));
 
         return $src;

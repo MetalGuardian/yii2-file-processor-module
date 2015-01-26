@@ -22,9 +22,6 @@ class FPMUrlRule extends \yii\base\Object implements \yii\web\UrlRuleInterface
      */
     public function parseRequest($manager, $request)
     {
-        \yii\helpers\VarDumper::dump($manager, 10, true);
-        exit();
-
         if ($request->getMethod() !== 'GET') {
             return false;
         }
