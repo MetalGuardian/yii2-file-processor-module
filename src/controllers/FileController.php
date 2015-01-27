@@ -6,7 +6,6 @@ use metalguardian\fileProcessor\helpers\FPM;
 use metalguardian\fileProcessor\Module;
 use yii\base\InvalidConfigException;
 use yii\helpers\FileHelper;
-use yii\imagine\Image;
 use yii\web\NotFoundHttpException;
 
 /**
@@ -48,14 +47,14 @@ class FileController extends \yii\web\Controller
             $thumbnailFile = FPM::getThumbnailDirectory($id, $module, $size) . DIRECTORY_SEPARATOR . FPM::getThumbnailFileName($id, $baseName, $extension);
             FileHelper::createDirectory(FPM::getThumbnailDirectory($id, $module, $size));
 
-            $imagine = \metalguardian\fileProcessor\components\Image::getImagine();
-            $file = $imagine->open($fileName);
             if (isset($config['do'])) {
                 switch($config['do'])
                 {
                     case 'adaptiveResize':
-                        $filter = new \Imagine\Filter\Basic\WebOptimization(null, ['quality' => 100]);
-                        $file = $filter->apply($file);
+                        $imagine = \metalguardian\fileProcessor\components\Image::getImagine();
+                        $file = $imagine->open($fileName);
+                        //$filter = new \Imagine\Filter\Basic\WebOptimization(null, ['quality' => 100]);
+                        //$file = $filter->apply($file);
                         //$file->save($thumbnailFile, ['quality' => 100]);
                         $file->show($extension, ['quality' => 100]);
                         break;
