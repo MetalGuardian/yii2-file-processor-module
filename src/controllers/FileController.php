@@ -69,7 +69,14 @@ class FileController extends \yii\web\Controller
                             ->show($extension);
                         break;
                     case 'canvasThumbnail':
-                        throw new InvalidConfigException(Module::t('exception', 'Not implemented yet'));
+                        Image::canvasThumbnail($fileName, $config['width'], $config['height'])
+                            ->save($thumbnailFile)
+                            ->show($extension);
+                        break;
+                    case 'frame':
+                        Image::frame($fileName, 50, 'F00')
+                            ->save($thumbnailFile)
+                            ->show($extension);
                         break;
                     case 'copy':
                         if (FPM::m()->symLink) {
