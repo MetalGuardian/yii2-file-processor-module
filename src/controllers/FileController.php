@@ -2,9 +2,12 @@
 
 namespace metalguardian\fileProcessor\controllers;
 
+use Imagine\Image\ManipulatorInterface;
+use metalguardian\fileProcessor\components\Image;
 use metalguardian\fileProcessor\helpers\FPM;
 use metalguardian\fileProcessor\Module;
 use yii\base\InvalidConfigException;
+use yii\helpers\ArrayHelper;
 use yii\helpers\FileHelper;
 use yii\web\NotFoundHttpException;
 
@@ -47,30 +50,34 @@ class FileController extends \yii\web\Controller
             $thumbnailFile = FPM::getThumbnailDirectory($id, $module, $size) . DIRECTORY_SEPARATOR . FPM::getThumbnailFileName($id, $baseName, $extension);
             FileHelper::createDirectory(FPM::getThumbnailDirectory($id, $module, $size));
 
-            if (isset($config['do'])) {
-                switch($config['do'])
+            if (isset($config['action'])) {
+                switch($config['action'])
                 {
-                    case 'adaptiveResize':
-                        $imagine = \metalguardian\fileProcessor\components\Image::getImagine();
-                        $file = $imagine->open($fileName);
-                        //$filter = new \Imagine\Filter\Basic\WebOptimization(null, ['quality' => 100]);
-                        //$file = $filter->apply($file);
-                        //$file->save($thumbnailFile, ['quality' => 100]);
-                        $file->show($extension, ['quality' => 100]);
+                    case 'adaptiveThumbnail':
+                        Image::thumbnail($fileName, $config['width'], $config['height'])
+                            ->save($thumbnailFile)
+                            ->show($extension);
                         break;
-                    case 'resize':
-
+                    case 'thumbnail':
+                        Image::thumbnail($fileName, $config['width'], $config['height'], ManipulatorInterface::THUMBNAIL_INSET)
+                            ->save($thumbnailFile)
+                            ->show($extension);
                         break;
-                    case 'resizeCanvas':
-
+                    case 'crop':
+                        Image::crop($fileName, $config['width'], $config['height'], $config['startX'], $config['startY'])
+                            ->save($thumbnailFile)
+                            ->show($extension);
+                        break;
+                    case 'canvasThumbnail':
+                        throw new InvalidConfigException(Module::t('exception', 'Not implemented yet'));
                         break;
                     case 'copy':
-                        //copy($fileName, $thumbnailFile);
-                        symlink($fileName, $thumbnailFile);
-
-                        header('Content-type: ' . FileHelper::getMimeType($fileName));
-
-                        readfile($thumbnailFile);
+                        if (FPM::m()->symLink) {
+                            symlink($fileName, $thumbnailFile);
+                        } else {
+                            copy($fileName, $thumbnailFile);
+                        }
+                        \Yii::$app->response->sendFile($thumbnailFile);
                         break;
                     default:
                         throw new InvalidConfigException(Module::t('exception', 'Action is incorrect'));

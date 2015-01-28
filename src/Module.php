@@ -78,19 +78,21 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
      *                    'width' => '151',
      *                    'height' => '157',
      *                    'quality' => 80,
-     *                    'do' => 'resize', // resize|adaptiveResize
+     *                    'action' => 'thumbnail', // thumbnail|adaptiveThumbnail
      *                ),
      *                'medium' => array(
      *                    'width' => '500',
      *                    'height' => '500',
      *                    'quality' => 80,
-     *                    'do' => 'resize', // resize|adaptiveResize
+     *                    'action' => 'thumbnail', // thumbnail|adaptiveThumbnail
      *                ),
      *            ),
      *        )
      * )
      */
     public $imageSections = [];
+
+    public $symLink = false;
 
     public function init()
     {
