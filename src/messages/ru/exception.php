@@ -17,6 +17,11 @@
  * NOTE: this file must be saved in UTF-8 encoding.
  */
 return [
-    'Missing meta data for file' => '',
-    'Wrong module name! You need call this method with right fileProcessor module name.' => '',
+    'Action is incorrect' => 'Неправильное действие',
+    'Action not defined' => 'Не указано действие',
+    'File not found' => 'Файл не найден',
+    'Incorrect request' => 'Не верный запрос',
+    'Missing meta data for file' => 'Не найдены данные файла',
+    'Wrong generated link' => 'Не правильно сгенерирована ссылка',
+    'Wrong module name! You need call this method with right fileProcessor module name.' => 'Не правильное имя модуля! Вы дожны вызывать этот метод используя правильное имя модуля fileProcessor',
 ];

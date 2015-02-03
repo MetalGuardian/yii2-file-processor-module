@@ -7,7 +7,6 @@ use metalguardian\fileProcessor\components\Image;
 use metalguardian\fileProcessor\helpers\FPM;
 use metalguardian\fileProcessor\Module;
 use yii\base\InvalidConfigException;
-use yii\helpers\ArrayHelper;
 use yii\helpers\FileHelper;
 use yii\web\NotFoundHttpException;
 
@@ -33,6 +32,10 @@ class FileController extends \yii\web\Controller
      */
     public function actionProcess($sub, $module, $size, $id, $baseName, $extension)
     {
+        if ($sub !== floor($id / FPM::getFilesPerDirectory())) {
+            throw new NotFoundHttpException(Module::t('exception', 'Wrong generated link'));
+        }
+
         $fileName = FPM::getOriginalDirectory($id) . DIRECTORY_SEPARATOR . FPM::getOriginalFileName($id, $baseName, $extension);
 
         if (file_exists($fileName)) {

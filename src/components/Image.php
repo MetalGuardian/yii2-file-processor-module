@@ -10,13 +10,11 @@ use Imagine\Image\Box;
 use Imagine\Image\ImageInterface;
 use Imagine\Image\ImagineInterface;
 use Imagine\Image\ManipulatorInterface;
-use Imagine\Image\Palette\CMYK;
 use Imagine\Image\Palette\RGB;
 use Imagine\Image\Point;
 use Yii;
 use yii\base\InvalidConfigException;
 use yii\base\InvalidParamException;
-use yii\helpers\ArrayHelper;
 
 /**
  * Class Image

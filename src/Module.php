@@ -10,6 +10,9 @@ namespace metalguardian\fileProcessor;
 class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
 {
 
+    /**
+     * @inheritdoc
+     */
     public $controllerNamespace = 'metalguardian\fileProcessor\controllers';
 
     /**
@@ -78,8 +81,13 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
      *                    'width' => '151',
      *                    'height' => '157',
      *                    'quality' => 80,
-     *                    'action' => 'thumbnail', // thumbnail|adaptiveThumbnail
+     *                    'action' => 'adaptiveThumbnail',
      *                ),
+     * thumbnail
+     * crop
+     * canvasThumbnail
+     * frame
+     * copy
      *                'medium' => array(
      *                    'width' => '500',
      *                    'height' => '500',
@@ -92,8 +100,23 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
      */
     public $imageSections = [];
 
+    /**
+     * Using a symlink on 'copy' action
+     *
+     * @var bool
+     */
     public $symLink = false;
 
+    /**
+     * Default image quality for all actions
+     *
+     * @var int
+     */
+    public $defaultQuality = 90;
+
+    /**
+     * @inheritdoc
+     */
     public function init()
     {
         parent::init();
@@ -103,6 +126,9 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
         $this->registerTranslations();
     }
 
+    /**
+     * Register translate messages for module
+     */
     public function registerTranslations()
     {
         \Yii::$app->i18n->translations['modules/fileProcessor/*'] = [
@@ -117,6 +143,8 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
     }
 
     /**
+     * Translate shortcut
+     *
      * @param $category
      * @param $message
      * @param array $params
