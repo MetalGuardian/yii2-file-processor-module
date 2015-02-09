@@ -32,7 +32,8 @@ class FileController extends \yii\web\Controller
      */
     public function actionProcess($sub, $module, $size, $id, $baseName, $extension)
     {
-        if ($sub !== floor($id / FPM::getFilesPerDirectory())) {
+        $directory = (string)floor($id / FPM::getFilesPerDirectory());
+        if ($sub !== $directory) {
             throw new NotFoundHttpException(Module::t('exception', 'Wrong generated link'));
         }
 
