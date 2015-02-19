@@ -1,7 +1,7 @@
 <?php
 /**
- * Author: metal
- * Email: metal
+ * Author: metalguardian
+ * Email: metalguardian
  */
 
 namespace metalguardian\fileProcessor\behaviors;
