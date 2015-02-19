@@ -137,7 +137,7 @@ class UploadBehavior extends \yii\base\Behavior
                     'class' => $this->image ? \yii\validators\ImageValidator::className()
                         : \yii\validators\FileValidator::className(),
                     'attributes' => [$this->attribute],
-                    'skipOnEmpty' => $this->required ? false : true,
+                    'skipOnEmpty' => !($this->required && $this->isNewRecord),
                 ],
                 $this->validator
             )
@@ -169,7 +169,7 @@ class UploadBehavior extends \yii\base\Behavior
                     'class' => $this->image ? \yii\validators\ImageValidator::className()
                         : \yii\validators\FileValidator::className(),
                     'attributes' => [$this->attribute],
-                    'skipOnEmpty' => $this->required ? false : true,
+                    'skipOnEmpty' => !($this->required && $this->isNewRecord),
                 ],
                 $this->validator
             )
