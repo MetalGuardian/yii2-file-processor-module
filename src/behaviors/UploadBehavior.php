@@ -91,11 +91,12 @@ class UploadBehavior extends \yii\base\Behavior
     {
         $file = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
 
-        if (!$file && !$this->required) {
+        $oldFileId = $this->owner->{$this->attribute};
+
+        if (($this->required && !$oldFileId) && !$file) {
             return false;
         }
 
-        $oldFileId = $this->owner->{$this->attribute};
         if ($this->validateFile($file)) {
             $this->owner->{$this->attribute} = $this->getValue($file);
 
@@ -137,7 +138,6 @@ class UploadBehavior extends \yii\base\Behavior
                     'class' => $this->image ? \yii\validators\ImageValidator::className()
                         : \yii\validators\FileValidator::className(),
                     'attributes' => [$this->attribute],
-                    'skipOnEmpty' => !($this->required && $this->owner->isNewRecord),
                 ],
                 $this->validator
             )
@@ -169,7 +169,6 @@ class UploadBehavior extends \yii\base\Behavior
                     'class' => $this->image ? \yii\validators\ImageValidator::className()
                         : \yii\validators\FileValidator::className(),
                     'attributes' => [$this->attribute],
-                    'skipOnEmpty' => !($this->required && $this->owner->isNewRecord),
                 ],
                 $this->validator
             )
