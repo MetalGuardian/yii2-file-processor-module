@@ -6,6 +6,8 @@
 
 namespace metalguardian\fileProcessor\behaviors;
 
+use yii\base\Exception;
+
 /**
  * Class UploadBehavior
  *
@@ -29,7 +31,8 @@ class UploadBehavior extends \yii\base\Behavior
      * @see ImageValidator
      */
     public $validator = [
-        'extensions' => []
+        'extensions' => [],
+        'skipOnEmpty' => false,
     ];
 
     /**
@@ -91,10 +94,14 @@ class UploadBehavior extends \yii\base\Behavior
     {
         $file = \yii\web\UploadedFile::getInstance($this->owner, $this->attribute);
 
+        if (!$file && !$this->required) {
+            return true;
+        }
+
         $oldFileId = $this->owner->{$this->attribute};
 
-        if (($this->required && !$oldFileId) && !$file) {
-            return false;
+        if (!$file && $oldFileId) {
+            return true;
         }
 
         if ($this->validateFile($file)) {
@@ -122,11 +129,11 @@ class UploadBehavior extends \yii\base\Behavior
     }
 
     /**
-     * Checks if given slug value is unique.
+     * Validate file
      *
-     * @param \yii\web\UploadedFile $file slug value
+     * @param \yii\web\UploadedFile $file
      *
-     * @return boolean whether slug is unique.
+     * @return boolean
      */
     protected function validateFile(\yii\web\UploadedFile $file = null)
     {
