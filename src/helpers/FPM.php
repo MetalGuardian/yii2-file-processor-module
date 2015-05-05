@@ -13,6 +13,12 @@ namespace metalguardian\fileProcessor\helpers;
  */
 class FPM
 {
+    const ACTION_ADAPTIVE_THUMBNAIL = 'adaptiveThumbnail';
+    const ACTION_THUMBNAIL = 'thumbnail';
+    const ACTION_CROP = 'crop';
+    const ACTION_CANVAS_THUMBNAIL = 'canvasThumbnail';
+    const ACTION_FRAME = 'frame';
+    const ACTION_COPY = 'copy';
 
     /**
      * @var \metalguardian\fileProcessor\components\ThumbnailCache

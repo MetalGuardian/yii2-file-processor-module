@@ -57,32 +57,32 @@ class FileController extends \yii\web\Controller
             if (isset($config['action'])) {
                 switch($config['action'])
                 {
-                    case 'adaptiveThumbnail':
+                    case FPM::ACTION_ADAPTIVE_THUMBNAIL:
                         Image::thumbnail($fileName, $config['width'], $config['height'])
                             ->save($thumbnailFile)
                             ->show($extension);
                         break;
-                    case 'thumbnail':
+                    case FPM::ACTION_THUMBNAIL:
                         Image::thumbnail($fileName, $config['width'], $config['height'], ManipulatorInterface::THUMBNAIL_INSET)
                             ->save($thumbnailFile)
                             ->show($extension);
                         break;
-                    case 'crop':
+                    case FPM::ACTION_CROP:
                         Image::crop($fileName, $config['width'], $config['height'], $config['startX'], $config['startY'])
                             ->save($thumbnailFile)
                             ->show($extension);
                         break;
-                    case 'canvasThumbnail':
+                    case FPM::ACTION_CANVAS_THUMBNAIL:
                         Image::canvasThumbnail($fileName, $config['width'], $config['height'])
                             ->save($thumbnailFile)
                             ->show($extension);
                         break;
-                    case 'frame':
+                    case FPM::ACTION_FRAME:
                         Image::frame($fileName, 50, 'F00')
                             ->save($thumbnailFile)
                             ->show($extension);
                         break;
-                    case 'copy':
+                    case FPM::ACTION_COPY:
                         if (FPM::m()->symLink) {
                             symlink($fileName, $thumbnailFile);
                         } else {
