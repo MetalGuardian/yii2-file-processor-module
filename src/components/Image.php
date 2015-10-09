@@ -106,18 +106,15 @@ class Image
      * For example,
      *
      * ~~~
-     * $obj->crop('path\to\image.jpg', 200, 200, [5, 5]);
-     *
-     * $point = new \Imagine\Image\Point(5, 5);
-     * $obj->crop('path\to\image.jpg', 200, 200, $point);
+     * $obj->crop('path\to\image.jpg', 200, 200, 5, 5);
      * ~~~
      *
      * @param string $filename the image file path
      * @param integer $width the crop width
      * @param integer $height the crop height
-     * @param array $start the starting point. This must be an array with two elements representing `x` and `y` coordinates.
+     * @param int $startX
+     * @param int $startY
      * @return ImageInterface
-     * @throws InvalidParamException if the `$start` parameter is invalid
      */
     public static function crop($filename, $width, $height, $startX = 0, $startY = 0)
     {
@@ -137,9 +134,14 @@ class Image
      */
     public static function thumbnail($filename, $width, $height, $mode = ManipulatorInterface::THUMBNAIL_OUTBOUND, $filter = ImageInterface::FILTER_UNDEFINED)
     {
-        return static::getImagine()
-            ->open($filename)
-            ->thumbnail(new Box($width, $height), $mode, $filter);
+        $image = static::getImagine()->open($filename);
+
+        $ratio = $image->getSize()->getWidth() / $image->getSize()->getHeight();
+        list($width, $height) = static::countNullableSide($ratio, $width, $height);
+
+        $box = new Box($width, $height);
+
+        return $image->thumbnail($box, $mode, $filter);
     }
 
     /**
@@ -193,5 +195,22 @@ class Image
         }
         $thumb->paste($img, new Point($startX, $startY));
         return $thumb;
+    }
+
+    /**
+     * @param null|int $width
+     * @param null|int $height
+     * @return array
+     */
+    protected static function countNullableSide($ratio, $width = null, $height = null)
+    {
+        if ($width !== null && $height === null) {
+            $height = ceil($width / $ratio);
+        } elseif ($width === null && $height !== null) {
+            $width = ceil($height * $ratio);
+        } elseif ($width === null && $height === null) {
+            throw new InvalidParamException("Width and height cannot be null at same time.");
+        }
+        return [$width, $height];
     }
 }
