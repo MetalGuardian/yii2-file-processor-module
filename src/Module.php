@@ -163,7 +163,7 @@ class Module extends \yii\base\Module implements \yii\base\BootstrapInterface
     public function bootstrap($app)
     {
         $app->getUrlManager()->addRules([
-            'GET ' . $this->thumbnailDirectory . '/<sub:\d+>/<module:\w+>_<size:\w+>/<id:\d+>-<baseName>.<extension>' => $this->id . '/file/process',
+            'GET ' . $this->thumbnailDirectory . '/<sub:\d+>/<module:\w+>_<size:\w+>/<id:\d+>-<baseName:.*>.<extension>' => $this->id . '/file/process',
         ], false);
     }
 }
